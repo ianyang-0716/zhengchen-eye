@@ -10,10 +10,36 @@
 #include "assets/lang_config.h"
 #include <cstring>
 #include "settings.h"
+#include <libs/gif/lv_gif.h>
+#include <cstring>
+#include <vector>
 
 #include "board.h"
 
 #define TAG "LcdDisplay"
+
+#if CONFIG_USE_LCD_240X240_GIF1 || CONFIG_USE_LCD_160X160_GIF1
+LV_IMG_DECLARE(angry);
+LV_IMG_DECLARE(confused);
+LV_IMG_DECLARE(cool);
+LV_IMG_DECLARE(delicious);
+LV_IMG_DECLARE(happy);
+LV_IMG_DECLARE(love);
+LV_IMG_DECLARE(sad);
+LV_IMG_DECLARE(sleepy);
+LV_IMG_DECLARE(thinking);
+LV_IMG_DECLARE(cute); // Add this line
+#else
+LV_IMG_DECLARE(angry);
+LV_IMG_DECLARE(confused);
+LV_IMG_DECLARE(happy);
+LV_IMG_DECLARE(love);
+LV_IMG_DECLARE(neutral);
+LV_IMG_DECLARE(sleepy);
+LV_IMG_DECLARE(thinking);
+LV_IMG_DECLARE(winking);
+#endif
+
 
 // Color definitions for dark theme
 #define DARK_BACKGROUND_COLOR       lv_color_hex(0x121212)     // Dark background
@@ -720,6 +746,8 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_style_pad_row(container_, 0, 0);
     lv_obj_set_style_bg_color(container_, current_theme_.background, 0);
     lv_obj_set_style_border_color(container_, current_theme_.border, 0);
+    lv_obj_set_scrollbar_mode(container_, LV_SCROLLBAR_MODE_OFF);
+
 
     /* Status bar */
     status_bar_ = lv_obj_create(container_);
@@ -727,7 +755,25 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_style_radius(status_bar_, 0, 0);
     lv_obj_set_style_bg_color(status_bar_, current_theme_.background, 0);
     lv_obj_set_style_text_color(status_bar_, current_theme_.text, 0);
+    lv_obj_add_flag(status_bar_, LV_OBJ_FLAG_HIDDEN);
+
+    overlay_container = lv_obj_create(container_);
+    lv_obj_remove_style_all(overlay_container);  
+    lv_obj_set_size(overlay_container, LV_HOR_RES, LV_VER_RES);  
+    lv_obj_set_style_bg_color(overlay_container, lv_color_black(), 0);  
+    lv_obj_set_style_bg_opa(overlay_container, LV_OPA_COVER, 0);
+    lv_obj_align(overlay_container, LV_ALIGN_CENTER, 0, 0);      
     
+
+    gif_label_ = lv_gif_create(overlay_container);
+#if CONFIG_USE_LCD_240X240_GIF1 || CONFIG_USE_LCD_160X160_GIF1
+    lv_gif_set_src(gif_label_, &happy);
+#else
+    lv_gif_set_src(gif_label_, &neutral);
+#endif
+    lv_obj_set_size(gif_label_, LV_HOR_RES, LV_VER_RES);
+    lv_obj_align(gif_label_, LV_ALIGN_CENTER, 0, 0); 
+   
     /* Content */
     content_ = lv_obj_create(container_);
     lv_obj_set_scrollbar_mode(content_, LV_SCROLLBAR_MODE_OFF);
@@ -745,6 +791,7 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_style_text_font(emotion_label_, &font_awesome_30_4, 0);
     lv_obj_set_style_text_color(emotion_label_, current_theme_.text, 0);
     lv_label_set_text(emotion_label_, FONT_AWESOME_AI_CHIP);
+    lv_obj_add_flag(emotion_label_, LV_OBJ_FLAG_HIDDEN);
 
     preview_image_ = lv_image_create(content_);
     lv_obj_set_size(preview_image_, width_ * 0.5, height_ * 0.5);
@@ -757,6 +804,7 @@ void LcdDisplay::SetupUI() {
     lv_label_set_long_mode(chat_message_label_, LV_LABEL_LONG_WRAP); // 设置为自动换行模式
     lv_obj_set_style_text_align(chat_message_label_, LV_TEXT_ALIGN_CENTER, 0); // 设置文本居中对齐
     lv_obj_set_style_text_color(chat_message_label_, current_theme_.text, 0);
+    lv_obj_add_flag(chat_message_label_, LV_OBJ_FLAG_HIDDEN);
 
     /* Status bar */
     lv_obj_set_flex_flow(status_bar_, LV_FLEX_FLOW_ROW);
@@ -835,55 +883,82 @@ void LcdDisplay::SetPreviewImage(const lv_img_dsc_t* img_dsc) {
 
 void LcdDisplay::SetEmotion(const char* emotion) {
     struct Emotion {
-        const char* icon;
+        const lv_img_dsc_t* gif;
         const char* text;
     };
-
+#if CONFIG_USE_LCD_240X240_GIF1 || CONFIG_USE_LCD_160X160_GIF1
     static const std::vector<Emotion> emotions = {
-        {"😶", "neutral"},
-        {"🙂", "happy"},
-        {"😆", "laughing"},
-        {"😂", "funny"},
-        {"😔", "sad"},
-        {"😠", "angry"},
-        {"😭", "crying"},
-        {"😍", "loving"},
-        {"😳", "embarrassed"},
-        {"😯", "surprised"},
-        {"😱", "shocked"},
-        {"🤔", "thinking"},
-        {"😉", "winking"},
-        {"😎", "cool"},
-        {"😌", "relaxed"},
-        {"🤤", "delicious"},
-        {"😘", "kissy"},
-        {"😏", "confident"},
-        {"😴", "sleepy"},
-        {"😜", "silly"},
-        {"🙄", "confused"}
+        {&happy, "neutral"},
+        {&happy, "happy"},
+        {&happy, "laughing"},
+        {&happy, "funny"},
+        {&sad, "sad"},
+        {&angry, "angry"},
+        {&sad, "crying"},
+        {&love, "loving"},
+        {&confused, "embarrassed"},
+        {&delicious, "surprised"},
+        {&delicious, "shocked"},
+        {&thinking, "thinking"},
+        {&cool, "winking"},
+        {&cool, "cool"},
+        {&happy, "relaxed"},
+        {&delicious, "delicious"},
+        {&love, "kissy"},
+        {&confused, "confident"},
+        {&sleepy, "sleepy"},
+        {&delicious, "silly"},
+        {&confused, "confused"},
+        {&cute, "cute_eye"} // Add this line for your new emotion
     };
-    
+#else
+    static const std::vector<Emotion> emotions = {
+        {&neutral, "neutral"},
+        {&happy, "happy"},
+        {&happy, "laughing"},
+        {&happy, "funny"},
+        {&neutral, "sad"},
+        {&angry, "angry"},
+        {&neutral, "crying"},
+        {&love, "loving"},
+        {&confused, "embarrassed"},
+        {&confused, "surprised"},
+        {&winking, "shocked"},
+        {&confused, "thinking"},
+        {&winking, "winking"},
+        {&winking, "cool"},
+        {&happy, "relaxed"},
+        {&winking, "delicious"},
+        {&love, "kissy"},
+        {&confused, "confident"},
+        {&sleepy, "sleepy"},
+        {&neutral, "silly"},
+        {&confused, "confused"}
+    };
+#endif
     // 查找匹配的表情
     std::string_view emotion_view(emotion);
     auto it = std::find_if(emotions.begin(), emotions.end(),
         [&emotion_view](const Emotion& e) { return e.text == emotion_view; });
 
     DisplayLockGuard lock(this);
-    if (emotion_label_ == nullptr) {
+    if (gif_label_ == nullptr) {
         return;
     }
-
-    // 如果找到匹配的表情就显示对应图标，否则显示默认的neutral表情
-    lv_obj_set_style_text_font(emotion_label_, fonts_.emoji_font, 0);
+    
     if (it != emotions.end()) {
-        lv_label_set_text(emotion_label_, it->icon);
+        lv_gif_set_src(gif_label_, it->gif);
     } else {
-        lv_label_set_text(emotion_label_, "😶");
-    }
+#if CONFIG_USE_LCD_240X240_GIF1 || CONFIG_USE_LCD_160X160_GIF1
+        lv_gif_set_src(gif_label_, &happy);
+#else
+        lv_gif_set_src(gif_label_, &neutral);
+#endif
+    } 
 
 #if !CONFIG_USE_WECHAT_MESSAGE_STYLE
     // 显示emotion_label_，隐藏preview_image_
-    lv_obj_clear_flag(emotion_label_, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(gif_label_, LV_OBJ_FLAG_HIDDEN);
     if (preview_image_ != nullptr) {
         lv_obj_add_flag(preview_image_, LV_OBJ_FLAG_HIDDEN);
     }

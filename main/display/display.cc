@@ -154,19 +154,6 @@ void Display::UpdateStatusBar(bool update_all) {
             lv_label_set_text(battery_label_, battery_icon_);
         }
 
-        if (low_battery_popup_ != nullptr) {
-            if (strcmp(icon, FONT_AWESOME_BATTERY_EMPTY) == 0 && discharging) {
-                if (lv_obj_has_flag(low_battery_popup_, LV_OBJ_FLAG_HIDDEN)) { // 如果低电量提示框隐藏，则显示
-                    lv_obj_clear_flag(low_battery_popup_, LV_OBJ_FLAG_HIDDEN);
-                    app.PlaySound(Lang::Sounds::P3_LOW_BATTERY);
-                }
-            } else {
-                // Hide the low battery popup when the battery is not empty
-                if (!lv_obj_has_flag(low_battery_popup_, LV_OBJ_FLAG_HIDDEN)) { // 如果低电量提示框显示，则隐藏
-                    lv_obj_add_flag(low_battery_popup_, LV_OBJ_FLAG_HIDDEN);
-                }
-            }
-        }
     }
 
     // 每 10 秒更新一次网络图标

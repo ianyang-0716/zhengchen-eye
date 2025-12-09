@@ -43,6 +43,7 @@ protected:
     lv_display_t *display_ = nullptr;
 
     lv_obj_t *emotion_label_ = nullptr;
+    lv_obj_t *gif_label_ = nullptr;
     lv_obj_t *network_label_ = nullptr;
     lv_obj_t *status_label_ = nullptr;
     lv_obj_t *notification_label_ = nullptr;

@@ -503,7 +503,6 @@ void Application::Start() {
         // Play the success sound to indicate the device is ready
         audio_service_.PlaySound(Lang::Sounds::P3_SUCCESS);
     }
-
     // Print heap stats
     SystemInfo::PrintHeapStats();
 }
@@ -516,9 +515,11 @@ void Application::OnClockTimer() {
 
     // Print the debug info every 10 seconds
     if (clock_ticks_ % 10 == 0) {
-        // SystemInfo::PrintTaskCpuUsage(pdMS_TO_TICKS(1000));
-        // SystemInfo::PrintTaskList();
-        SystemInfo::PrintHeapStats();
+        //SystemInfo::PrintTaskCpuUsage(pdMS_TO_TICKS(1000));
+        //SystemInfo::PrintTaskList();
+        //SystemInfo::PrintHeapStats();
+        //SystemInfo::PrintPsramHeapStats();
+        //SystemInfo::MonitorCpuUsage();
     }
 }
 
@@ -744,20 +745,18 @@ void Application::SendMcpMessage(const std::string& payload) {
 void Application::SetAecMode(AecMode mode) {
     aec_mode_ = mode;
     Schedule([this]() {
-        auto& board = Board::GetInstance();
-        auto display = board.GetDisplay();
         switch (aec_mode_) {
         case kAecOff:
             audio_service_.EnableDeviceAec(false);
-            display->ShowNotification(Lang::Strings::RTC_MODE_OFF);
+            PlaySound(Lang::Sounds::P3_AEC_OFF);
             break;
         case kAecOnServerSide:
             audio_service_.EnableDeviceAec(false);
-            display->ShowNotification(Lang::Strings::RTC_MODE_ON);
+            PlaySound(Lang::Sounds::P3_AEC_NO);
             break;
         case kAecOnDeviceSide:
             audio_service_.EnableDeviceAec(true);
-            display->ShowNotification(Lang::Strings::RTC_MODE_ON);
+            PlaySound(Lang::Sounds::P3_AEC_NO);
             break;
         }
 
